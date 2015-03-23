@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="serverurl">http://10.10.1.4/mobilesafe/updateinfo.html</string>
+</resources>

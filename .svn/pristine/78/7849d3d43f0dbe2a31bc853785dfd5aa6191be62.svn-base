@@ -1,0 +1,148 @@
+package com.android.mobilesafe.service;
+
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.graphics.PixelFormat;
+import android.os.IBinder;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
+import android.view.Gravity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.TextView;
+
+import com.android.mobilesafe.R;
+import com.android.mobilesafe.db.dao.NumberAddressQueryUtils;
+
+public class AddressService extends Service {
+	
+	// 窗体管理者
+	private WindowManager wm;
+	
+	private TelephonyManager tm;
+	
+	private MyPhoneStateListener listener;
+	
+	private OutCallReceiver receiver;
+	
+	private View view;
+	@Override
+	public IBinder onBind(Intent intent) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	// 在服务里定义一个广播接收者,监听去电
+	private class OutCallReceiver extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			// 得到要打出去的电话号码
+			String phone = getResultData();
+			String address = NumberAddressQueryUtils.queryNumber(phone);
+			MyToast(address);
+		}
+
+	}
+	
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		
+		// 实例化窗体
+		wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+		
+		// 注册一个广播接收者,用代码方式
+		receiver = new OutCallReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.setPriority(1000);
+		filter.addAction("android.intent.action.NEW_OUTGOING_CALL");
+		registerReceiver(receiver, filter);
+		
+		tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+		listener = new MyPhoneStateListener();
+		tm.listen(listener, PhoneStateListener.LISTEN_CALL_STATE);
+	}
+	
+	class MyPhoneStateListener extends PhoneStateListener{
+		
+		@Override
+		public void onCallStateChanged(int state, String incomingNumber) {
+			// 第一个参数是状态,第二个参数是电话号码
+			super.onCallStateChanged(state, incomingNumber);
+			switch (state) {
+			case TelephonyManager.CALL_STATE_RINGING:  // 铃声响起的时候
+				// 根据得到的电话号码,查询它的归属地
+				String address = NumberAddressQueryUtils.queryNumber(incomingNumber);
+				
+				// 自定义Toast
+				//Toast.makeText(getApplicationContext(), address, Toast.LENGTH_SHORT).show();
+				MyToast(address);
+				
+				break;
+
+			case TelephonyManager.CALL_STATE_IDLE:   // 空闲状态
+				// 把自定义Toast移除
+				if(view != null){
+					wm.removeView(view);
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	
+	
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		// 取消注册一个广播接收者
+		unregisterReceiver(receiver);
+		receiver = null;
+		
+		// 取消监听来电
+		tm.listen(listener, PhoneStateListener.LISTEN_NONE);
+		listener = null;
+	}
+
+
+	/**
+	 * 自定义Toast
+	 * @param address
+	 */
+	public void MyToast(String address) {
+		view = View.inflate(this, R.layout.address_show, null);
+		
+		// "半透明","活力橙	","卫士蓝","金属灰","苹果绿"
+		int ids[] = {R.drawable.call_locate_white,R.drawable.call_locate_orange,
+				R.drawable.call_locate_blue,R.drawable.call_locate_gray,
+				R.drawable.call_locate_green};
+		SharedPreferences sp = getSharedPreferences("config", MODE_PRIVATE);
+		int witch = sp.getInt("witch", 0);
+		TextView textView = (TextView) view.findViewById(R.id.tv_address);
+		textView.setText(address);
+	
+		view.setBackgroundResource(ids[witch]);
+		// 窗体的参数
+		WindowManager.LayoutParams mParams = new WindowManager.LayoutParams();
+		
+		WindowManager.LayoutParams params = mParams;
+		params.gravity = Gravity.LEFT | Gravity.TOP;
+        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_TOUCHABLE_WHEN_WAKING
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+        params.format = PixelFormat.TRANSLUCENT;
+        params.type = WindowManager.LayoutParams.TYPE_TOAST;
+        params.setTitle("Toast");
+		
+		
+		wm.addView(view, params);
+	}
+}

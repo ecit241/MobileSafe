@@ -1,0 +1,67 @@
+package com.android.mobilesafe.engine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
+
+import com.android.mobilesafe.domain.AppInfo;
+
+/**
+ * 业务方法,提供手机里面安装的所有应用程序的信息
+ * @author Administrator
+ *
+ */
+public class AppInfoProvider {
+	
+	/**
+	 * 获取所有安装应用程序信息
+	 * @param context
+	 * @return
+	 */
+	public static List<AppInfo> getAppInfo(Context context){
+		
+		PackageManager pm = context.getPackageManager();
+		// 所有安装在系统上的应用程序包信息
+		List<PackageInfo> packInfos = pm.getInstalledPackages(0);
+		
+		List<AppInfo> appInfos = new ArrayList<AppInfo>();
+		for (PackageInfo packageInfo : packInfos) {
+			AppInfo appInfo = new AppInfo();
+			String packname = packageInfo.packageName;
+			ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+			Drawable icon = applicationInfo.loadIcon(pm);
+			String name = (String) applicationInfo.loadLabel(pm);
+			int flags = applicationInfo.flags;  // 应用程序信息标志
+			int uid = applicationInfo.uid;
+			appInfo.setUid(uid);
+//			File rcvfile = new File("/proc/uid_stat/"+uid+"/tcp_rcv");
+//			File sndfILE = new File("/proc/uid_stat/"+uid+"/tcp_snd");			
+			if((flags & ApplicationInfo.FLAG_SYSTEM) == 0){
+				// 用户程序
+				appInfo.setUserApp(true);
+			}else{
+				// 系统程序
+				appInfo.setUserApp(false);
+			}
+			if((flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) == 0){
+				// 手机内在
+				appInfo.setInRom(true);
+			}else{
+				// sd卡
+				appInfo.setInRom(false);
+			}
+			
+			appInfo.setPackname(packname);
+			appInfo.setIcon(icon);
+			appInfo.setName(name);
+			appInfos.add(appInfo);
+		}
+		
+		return appInfos;
+	}
+}

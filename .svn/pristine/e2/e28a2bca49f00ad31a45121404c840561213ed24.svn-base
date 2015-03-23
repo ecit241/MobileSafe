@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:background="#8866ff00"
+        android:gravity="center"
+        android:text="功能列表"
+        android:textColor="#000000"
+        android:textSize="22sp" />
+    
+    <com.android.ui.FocusedTextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+         android:focusableInTouchMode="true"
+        android:textSize="18sp"
+        android:text="手机安全卫士,时刻守护你的手机安全                 手机安全卫士,时刻守护你的手机安全"/>
+
+    <GridView
+        android:layout_marginTop="15dp"
+        android:verticalSpacing="10dp"
+        android:id="@+id/list_home"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:numColumns="3" >
+    </GridView>
+
+</LinearLayout>
